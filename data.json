@@ -1,17 +1,8 @@
-[
-  {
-    "id": 1,
-    "name": "example.com",
-    "keywords": [
-      { "key": "order_id", "value": "" },
-      { "key": "amount", "value": "" }
-    ]
-  },
-  {
-    "id": 2,
-    "name": "tracking.vn",
-    "keywords": [
-      { "key": "tracking_code", "value": "" }
-    ]
-  }
-]
+{
+  "name": "statdemand.notifications@gmail.com",
+  "keywords": [
+    { "key": "Appraisal Method", "value": "" },
+    { "key": "Property Address", "value": "" },
+    { "key": "Property Type", "value": "" }
+  ]
+}

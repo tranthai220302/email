@@ -1,28 +1,57 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import * as imaps from 'imap-simple';
-import { simpleParser } from 'mailparser';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Site } from 'src/entities/site.entity';
+import { Keyword } from 'src/entities/keyword.entity';
 
 dotenv.config();
 
 @Injectable()
 export class EmailService {
-  private readonly logger = new Logger(EmailService.name);
-  private readonly dataPath = path.join(__dirname, '../../data.json');
+  constructor(
+    @InjectRepository(Site)
+    private siteRepository: Repository<Site>,
 
-  private loadSites(): any[] {
-    const raw = fs.readFileSync(this.dataPath, 'utf8');
-    return JSON.parse(raw);
+    @InjectRepository(Keyword)
+    private keywordRepository: Repository<Keyword>,
+  ) { }
+
+  private extractKeyValues(content: string): Record<string, string> {
+    const keyValues: Record<string, string> = {};
+    const lines = content.split(/\r?\n/);
+    for (const line of lines) {
+      let match: RegExpMatchArray | null;
+      match = line.match(/^\s*\[(.+?)\]\s*[:：]+\s*(.+)$/);
+      if (match) {
+        keyValues[match[1].trim()] = match[2].trim();
+        continue;
+      }
+
+      match = line.match(/^■?\s*(.+?)\s*[:：]+\s*(.+)$/);
+      if (match) {
+        keyValues[match[1].trim()] = match[2].trim();
+      }
+    }
+    return keyValues;
   }
 
-  private saveSites(sites: any[]) {
-    fs.writeFileSync(this.dataPath, JSON.stringify(sites, null, 2), 'utf8');
-  }
+  async fetchEmailBySiteId(siteId: number): Promise<Record<string, string>> {
+    const site = await this.siteRepository.findOne({ where: { id: siteId } });
+    if (!site) throw new NotFoundException('Site not found');
 
-  async fetchEmails() {
-    const config = {
+    const keywords = await this.keywordRepository.find({
+      where: { site: { id: siteId } },
+      relations: ['site'],
+    });
+
+    const keywordMap = new Map<string, Keyword>();
+    keywords.forEach(k => keywordMap.set(k.key, k));
+
+    const connection = await imaps.connect({
       imap: {
         user: process.env.EMAIL_USER,
         password: process.env.EMAIL_PASSWORD,
@@ -30,38 +59,47 @@ export class EmailService {
         port: Number(process.env.EMAIL_PORT),
         tls: true,
         authTimeout: 3000,
-        tlsOptions: {
-          rejectUnauthorized: false,
-        },
+        tlsOptions: { rejectUnauthorized: false },
       },
-    };
+    });
 
-    const connection = await imaps.connect(config);
     await connection.openBox('INBOX');
 
-    const searchCriteria = ['UNSEEN'];
-    const fetchOptions = {
-      bodies: [''],
-      struct: true,
-    };
+    const today = new Date();
+    const formattedDate = `${String(today.getDate()).padStart(2, '0')}-${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][today.getMonth()]}-${today.getFullYear()}`;
+
+    const searchCriteria = [['FROM', site.email], ['ON', formattedDate]];
+    const fetchOptions = { bodies: [''], struct: true };
 
     const messages = await connection.search(searchCriteria, fetchOptions);
 
-    const senders: string[] = [];
-
-    for (const message of messages.slice(0, 10)) {
+    for (const message of messages.reverse()) {
       const parts = imaps.getParts(message.attributes.struct);
-      const part = parts.find(
-        (p) => p.type === 'text' && p.subtype === 'plain',
-      );
-      const raw = await connection.getPartData(message, part);
-      const parsed = await simpleParser(raw);
-      console.log(parsed);
+      for (const part of parts) {
+        if (`${part.type}/${part.subtype}` === 'text/plain') {
+          const raw = await connection.getPartData(message, part);
+          const allData = this.extractKeyValues(raw);
 
-      senders.push(parsed.from?.text || '[Unknown Sender]');
+          const extracted: Record<string, string> = {};
+
+          for (const [key, keywordEntity] of keywordMap.entries()) {
+            if (allData[key]) {
+              extracted[key] = allData[key];
+              keywordEntity.value = allData[key]; 
+            }
+          }
+
+          await this.keywordRepository.save(Array.from(keywordMap.values()));
+
+          await connection.end();
+          return extracted;
+        }
+      }
     }
 
     await connection.end();
-    return senders;
+    return {};
   }
+
 }
+
