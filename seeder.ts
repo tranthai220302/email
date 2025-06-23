@@ -20,31 +20,35 @@ const AppDataSource = new DataSource({
 
 async function seed() {
   await AppDataSource.initialize();
-  console.log('DB connected');
+  console.log('✅ DB connected');
 
   const rawData = fs.readFileSync('data.json', 'utf8');
-  const data = JSON.parse(rawData);
+  const sitesData = JSON.parse(rawData); // Array of site objects
 
   const siteRepo = AppDataSource.getRepository(Site);
   const keywordRepo = AppDataSource.getRepository(Keyword);
 
-  const site = siteRepo.create({ email: data.name });
-  await siteRepo.save(site);
+  for (const siteData of sitesData) {
+    const site = siteRepo.create({ email: siteData.name });
+    await siteRepo.save(site);
 
-  for (const kw of data.keywords) {
-    const keyword = keywordRepo.create({
-      key: kw.key,
-      value: kw.value,
-      site: site,
-    });
-    await keywordRepo.save(keyword);
+    const keywordEntities: Keyword[] = siteData.keywords.map((kw: any) =>
+      keywordRepo.create({
+        key: kw.key,
+        value: kw.value,
+        site: site,
+      }),
+    );
+
+    await keywordRepo.save(keywordEntities);
+    console.log(`✅ Inserted site: ${site.email} with ${keywordEntities.length} keywords`);
   }
 
-  console.log('✅ Seed completed');
+  console.log('🎉 All sites seeded successfully');
   process.exit(0);
 }
 
 seed().catch((err) => {
-  console.error('❌ Seed failed:', err);
+  console.error('❌ Seeding failed:', err);
   process.exit(1);
 });

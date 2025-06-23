@@ -1,8 +1,50 @@
-{
-  "name": "statdemand.notifications@gmail.com",
-  "keywords": [
-    { "key": "Appraisal Method", "value": "" },
-    { "key": "Property Address", "value": "" },
-    { "key": "Property Type", "value": "" }
-  ]
-}
+[
+  {
+    "name": "statdemand.notifications@gmail.com",
+    "keywords": [
+      { "key": "Appraisal Method", "value": "" },
+      { "key": "Property Address", "value": "" },
+      { "key": "Property Type", "value": "" },
+      { "key": "Building (Exclusive) Area", "value": "" },
+      { "key": "Land Area", "value": "" },
+      { "key": "Floor Plan", "value": "" },
+      { "key": "Year Built", "value": "" },
+      { "key": "Current Status", "value": "" },
+      { "key": "Rental Income", "value": "" },
+      { "key": "Ownership", "value": "" }
+    ]
+  },
+  {
+    "name": "thaitq@htplus.software",
+    "keywords": [
+      { "key": "Name", "value": "" },
+      { "key": "Furigana", "value": "" },
+      { "key": "Phone Number", "value": "" },
+      { "key": "Email Address", "value": "" },
+      { "key": "Property Type", "value": "" },
+      { "key": "Business Name", "value": "" },
+      { "key": "Property Name", "value": "" },
+      { "key": "Property Ownership", "value": "" },
+      { "key": "Current Status", "value": "" },
+      { "key": "Floor Plan", "value": "" },
+      { "key": "Residence Address", "value": "" },
+      { "key": "Exclusive Area", "value": "" },
+      { "key": "Total Units", "value": "" }
+    ]
+  },
+  {
+    "name": "hoangleduy27901@gmail.com",
+    "keywords": [
+      { "key": "会期", "value": "" },
+      { "key": "会場", "value": "" },
+      { "key": "同時開催", "value": "" },
+      { "key": "登録日時", "value": "" },
+      { "key": "案件番号", "value": "" },
+      { "key": "サービス", "value": "" },
+      { "key": "物件所在地", "value": "" },
+      { "key": "物件種別", "value": "" },
+      { "key": "建物（専有）面積", "value": "" },
+      { "key": "土地面積", "value": "" }
+    ]
+  }
+]

@@ -18,7 +18,7 @@ dotenv.config();
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       entities: [Site, Keyword],
-      synchronize: false,
+      synchronize: true,
     }),
     EmailModule
   ],
